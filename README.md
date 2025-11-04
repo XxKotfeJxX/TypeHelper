@@ -1,71 +1,57 @@
-# Introduction
+# 🧩 TypeHelper
 
-This sample plugin demonstrates the usage of WebView in your UXP plugin. WebViews are particularly handy when certain web features, such as webGL, are not innately available in UXP.
+### Intelligent Speech-Bubble & Typography Assistant for Adobe Photoshop
 
-The aim of this plugin is 
-- To showcase WebView within a dialog and a panel.
-- Use WebGL within Webview.
-- Demo the communication between the plugin panel and remote WebView content via `postMessage`
+---
 
+## 🌟 Overview
+**TypeHelper** — це розширення для Photoshop, яке автоматично аналізує комікс-/манґа-файли (`.psd`) і допомагає розміщувати текст у баблах:
 
-## Documentation
-[postMessage](https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage) - Common for all Host Applications.
+- 🔍 Автоматичне визначення меж і типу баблів  
+- 🧠 Підбір шрифту та розміру  
+- 🪄 Компонування тексту всередині баблу  
+- ✍️ Ручний режим редагування  
+- 💾 Автозбереження та метадані в PSD  
 
-### InDesign
-The following docs will help you get additional context
-- [Manifest Permission Module](https://developer.adobe.com/indesign/uxp/plugins/concepts/manifest/#webviewpermission)
-- [HTMLWebView element](https://developer.adobe.com/indesign/uxp/reference/uxp-api/reference-js/Global%20Members/HTML%20Elements/HTMLWebViewElement/)
+---
 
-### Photoshop
-- [Manifest Permission Module](https://developer.adobe.com/photoshop/uxp/2022/guides/uxp_guide/uxp-misc/manifest-v5/#webviews)
-- [HTMLWebView element](https://developer.adobe.com/photoshop/uxp/2022/uxp-api/reference-js/Global%20Members/HTML%20Elements/HTMLWebViewElement/)
+## 🏗️ Architecture
+TypeHelper складається з двох частин:
 
-## Compatibility
-UXP v6.4
+1. **UXP-панель** у Photoshop  
+   - UI на HTML / JS / Spectrum UI  
+   - Використовує `batchPlay` для керування шарами  
+   - Підключається до локального сервера через `http://localhost:10854`
 
-### InDesign
-Since InDesign v18.5
+2. **BubbleServer (Python FastAPI)**  
+   - Аналізує PSD-файли (`psd_tools`, OpenCV, Pillow)  
+   - Розпізнає текст (OCR ja/ko/en)  
+   - Обчислює оптимальне компонування  
+   - Повертає JSON-результат панелі
 
-### Photoshop
-Since Photoshop v24.1.0
+Докладніше див. у [docs/architecture.md](docs/architecture.md).
 
-### Premiere Pro
-Since Premiere Pro v25.0.0
+---
 
-## Getting Started
+## 🧭 Roadmap
+| Phase | Version |                    Description                   |
+|:-----:|:-------:|:------------------------------------------------:|
+|   0   |  0.0.1  | Project specification (архітектура, формати, UX) |
+|   1   |  1.0.0  | Core skeleton – зв’язок UXP ↔ Python             |
+|   2   |    –    | PSD аналіз (межі, контури, типи)                 |
+|   3   |    –    | OCR + класифікація типів баблів                  |
+|   4   |    –    | Компонування тексту + реліз v1.0.0               |
+|  5–6  |    –    | Ручний режим + збереження → v2.0.0               |
+|  7 +  |    –    | UI / ML / релізи далі                            |
 
-### WebView Demo Server
-Currently, UXP WebView content can only be served from a web URL. UXP does not support loading local HTML content.
-In this plugin, a local server will serve the web page.
+---
 
-Follow the steps to run the local server:
-- Install `http server` by running the following command
-    - Mac - `sudo npm install -g http-server`.
-    - Windows - `npm install -g http-server`.
-- Traverse to `{yourpluginrootdirectory}/Receiver` folder and run `http-server -p 7724`
+## ⚙️ Installation (після релізу)
+1. Завантаж `.ccx` з [Releases](https://github.com/xxkotfejxx/TypeHelper/releases).  
+2. Встанови через Adobe Creative Cloud Installer.  
+3. У Photoshop: **Вікно → Розширення → TypeHelper**.  
 
-### Load the plugin via UDT
+---
 
-1. Make sure your application is running and you can see it under `Connected apps`
-2. Click on 'Add Plugin' button and select the `manifest.json` of this plugin.
-3. Click on the `•••` menu next to the corresponding plugin row. Select `Load` to view the plugin inside your application.
-Switch over to the host app, and the plugin's panel will be running.
-
-
-## Deep dive
-
-### manifest permission
-To use WebViews in a plugin, the `webview` permission is necessary in [manifest.json](./manifest.json).
-- webview.allow - Enables WebView access to the plugin.
-- webview.domains - Domain of the web URL.
-- webview.enableMessageBridge - Enables the content loaded within WebView to communicate with the plugin.
-
-### uxpAllowInspector
-In [index.html](./index.html), notice the `uxpAllowInspector` added to the WebView element inside the dialog. The purpose of this property is to enable debugging the contents of UXP WebView. Once set to `true`, you can right-click on the webview and select 'Inspect Element' to debug and view the `console.logs` from the webview content separately.</br>
-<b>Example:</b></br>
-```html
-<webview width="100%" height="360px" src="https://www.adobe.com" uxpAllowInspector="true" ></webview>
-```
-
-### update webview page
-If you are making changes to the WebView page (served from the http-server), make sure the http-server doesn't cache. Use `http-server -p 7724 -c-1` to restart the server and disable caching.
+## 📜 License
+MIT License © 2025 XxKotofeJxX
