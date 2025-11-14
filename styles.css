@@ -1,0 +1,32 @@
+body {
+  font-family: "Segoe UI", sans-serif;
+  background: #1e1e1e;
+  color: #eee;
+  padding: 12px;
+  margin: 0;
+}
+.header {
+  border-bottom: 1px solid #444;
+  margin-bottom: 10px;
+}
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.result {
+  background: #2c2c2c;
+  padding: 10px;
+  border-radius: 8px;
+  height: 220px;
+  overflow: auto;
+  font-size: 12px;
+}
+.footer {
+  margin-top: 10px;
+  border-top: 1px solid #444;
+  padding-top: 5px;
+  text-align: center;
+  font-size: 11px;
+  opacity: 0.6;
+}

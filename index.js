@@ -1,79 +1,111 @@
-const uxp = require('uxp');
-// ======= Webview in a dialog =======
-const openDialogBtn = document.getElementById("openDialogBtn");
-// hiding webview in dialog button by default and enabling for apps other than XD later
-// uxp.host is not available in XD and throws TypeError thats why using try catch
-try {
-    openDialogBtn.style.display = uxp?.host?.name !== "XD" ? "flex" : "none";
-} catch (error) {
-    openDialogBtn.style.display="none";
-    console.log(error?.message);
-}
-openDialogBtn.onclick = showDialog;
-function showDialog() {
-    const dialog = document.getElementById("dialog");
-    document.appendChild(dialog).showModal();
-}
+// ================================
+// 🧩 TypeHelper — index.js (оновлено)
+// ================================
 
-// print events
-let dialogWebview = document.getElementById("dialogWebview");
-dialogWebview.addEventListener("loadstart", (event) => {
-    console.log("events onloadstart : ", event.url)
-    document.getElementById("dialogLogs").value = "loadstart:" + event.url + "\n" + document.getElementById("dialogLogs").value;
-});
-dialogWebview.addEventListener("loadstop", (event) => {
-    console.log("events onloadstop : ", event.url)
-    document.getElementById("dialogLogs").value = "loadstop:" + event.url + "\n" + document.getElementById("dialogLogs").value;
-});
-dialogWebview.addEventListener("loaderror", (event) => {
-    console.log("events onloaderror : ", event.url)
-    document.getElementById("dialogLogs").value = "loaderror:" + event.url + "\n" + document.getElementById("dialogLogs").value;
-});
+// Лог для перевірки підключення скрипта
+console.log("📦 index.js завантажено");
 
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("✅ DOM готовий, ініціалізація UI...");
+  initUI();
 
-// send instructions to webview content
-const dialogCreateTriangleBtn = document.getElementById("dialogCreateTriangleBtn");
-dialogCreateTriangleBtn.onclick = postMessageCreateTriangleInDialog;
-function postMessageCreateTriangleInDialog() {
-    dialogWebview.postMessage("createTriangle");
-}
+  const healthBtn = document.getElementById("healthBtn");
+  const analyzeBtn = document.getElementById("analyzeBtn");
+  const resultEl = document.getElementById("result");
 
-const dialogTransformTriangleBtn = document.getElementById("dialogTransformTriangleBtn");
-dialogTransformTriangleBtn.onclick = postMessageRotateTriangleInDialog;
-function postMessageRotateTriangleInDialog() {
-    dialogWebview.postMessage("transformTriangle");
-}
+  if (!healthBtn || !analyzeBtn || !resultEl) {
+    console.error("❌ Не знайдено один або кілька елементів UI");
+    return;
+  }
 
-// ======= Webview in the plugin panel =======
+  console.log("🎯 Кнопки знайдено, додаємо слухачі подій...");
 
-const openPanelBtn = document.getElementById("openPanelBtn");
-openPanelBtn.onclick = showWebViewInPanel;
-function showWebViewInPanel() {
-    const webviewInPanel = document.getElementById("webviewInPanel");
-    webviewInPanel.style.display = "block";
-}
-
-// send instructions to webview content
-let panelWebview = document.getElementById("panelWebview");
-const panelCreateTriangleBtn = document.getElementById("panelCreateTriangleBtn");
-panelCreateTriangleBtn.onclick = postMessageCreateTriangleInPanel;
-function postMessageCreateTriangleInPanel() {
-    panelWebview.postMessage("createTriangle");
-}
-
-const panelTransformTriangleBtn = document.getElementById("panelTransformTriangleBtn");
-panelTransformTriangleBtn.onclick = postMessageRotateTriangleInPanel;
-function postMessageRotateTriangleInPanel() {
-    panelWebview.postMessage("transformTriangle");
-}
-
-
-// ======= receive message from webview content =======
-window.addEventListener("message", (e) => {
-    console.log(`Message from WebView(Origin:${e.origin}): ${e.data}`);
-    if (e.data.key === "imageDetails") {
-        document.getElementById("snapshot").src = e.data.value;
-    } else if (e.data.key === "canvasDetails") {
-        document.getElementById("logWebview").innerText = e.data.value;
+  // ----------------------------------------
+  // 🔹 Перевірка з'єднання
+  // ----------------------------------------
+  healthBtn.addEventListener("click", async () => {
+    console.log("💡 Клік по healthBtn");
+    try {
+      const res = await checkHealth();
+      resultEl.textContent = res;
+    } catch (err) {
+      console.error("❌ Помилка при перевірці з'єднання:", err);
+      resultEl.textContent = "❌ Помилка при перевірці зв’язку з сервером.";
     }
+  });
+
+  // ----------------------------------------
+  // 🔹 Аналіз PSD
+  // ----------------------------------------
+  analyzeBtn.addEventListener("click", async () => {
+    console.log("💡 Клік по analyzeBtn");
+
+    const { storage } = require("uxp");
+    const { localFileSystem } = storage;
+    const psApp = require("photoshop").app;
+
+    let filePath = null;
+
+    try {
+      // 1️⃣ Якщо є активний документ у Photoshop
+      if (psApp?.activeDocument) {
+        try {
+          const doc = psApp.activeDocument;
+
+          if (doc.fullName) {
+            filePath =
+              doc.fullName.nativePath || // основний варіант
+              doc.fullName.fsName || // запасний
+              null;
+          }
+
+          if (filePath) {
+            console.log("📄 Активний документ PSD:", filePath);
+          } else {
+            console.warn("⚠️ fullName недоступне — документ не збережено");
+          }
+        } catch (docErr) {
+          console.warn("⚠️ Помилка при доступі до документа:", docErr);
+        }
+      }
+
+      // 2️⃣ Якщо активного або збереженого нема — fallback на вибір теки
+      // 2️⃣ Якщо активного або збереженого нема — fallback на вибір PSD-файлу
+      if (!filePath) {
+        console.log("📁 Активного документа нема — вибір PSD вручну...");
+        try {
+          const psdFile = await localFileSystem.getFileForOpening({
+            types: ["psd"],
+          });
+
+          if (!psdFile) {
+            resultEl.textContent = "🚫 Файл не вибрано.";
+            return;
+          }
+
+          filePath = psdFile.nativePath;
+          console.log("📄 Обраний PSD:", filePath);
+        } catch (fileErr) {
+          console.error("❌ Помилка при виборі PSD:", fileErr);
+          resultEl.textContent =
+            "❌ Не вдалося відкрити файловий провідник або доступ заборонено.";
+          return;
+        }
+      }
+
+      // 3️⃣ Надсилаємо шлях до бекенду
+      if (filePath) {
+        const res = await analyzePSD(filePath);
+        resultEl.textContent = res;
+      } else {
+        resultEl.textContent =
+          "🚫 Не вдалося визначити шлях до PSD. Відкрий файл у Photoshop.";
+      }
+    } catch (err) {
+      console.error("❌ Помилка при аналізі PSD:", err);
+      resultEl.textContent = "❌ Не вдалося проаналізувати PSD.";
+    }
+  });
+
+  console.log("🚀 Слухачі подій успішно ініціалізовано");
 });
