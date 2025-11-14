@@ -1,113 +1,57 @@
 {
-  "id": "XxKotofeJxX.TypeHelper",
+  "id": "com.xxkotfejxx.typehelper",
   "name": "TypeHelper",
-  "version": "0.0.1",
-  "main": "index.html",
+  "version": "0.0.2",
   "manifestVersion": 5,
+  "main": "index.html",
+
   "host": [
-    {
-      "app": "PS",
-      "minVersion": "26.11.0"
-    }
+    { "app": "PS", "minVersion": "26.11.0" }
   ],
-  "requiredPermissions": {
-    "webview": {
-      "allow": "yes",
-      "domains": [
-        "http://127.0.0.1:7724"
-      ],
-      "enableMessageBridge": "localAndRemote"
-    }
-  },
+
   "entrypoints": [
     {
       "type": "panel",
       "id": "mainPanel",
-      "label": "WebView Sample",
-      "minimumSize": {
-        "width": 600,
-        "height": 850
-      },
-      "maximumSize": {
-        "width": 2000,
-        "height": 2000
-      },
-      "preferredDockedSize": {
-        "width": 600,
-        "height": 700
-      },
-      "preferredFloatingSize": {
-        "width": 600,
-        "height": 700
-      },
-      "icons": [
-        {
-          "width": 32,
-          "height": 32,
-          "path": "images/icon@1x.png",
-          "scale": [
-            1,
-            2
-          ],
-          "theme": [
-            "dark",
-            "darkest"
-          ],
-          "species": [
-            "generic"
-          ]
-        },
-        {
-          "width": 32,
-          "height": 32,
-          "path": "images/icon@2x.png",
-          "scale": [
-            1,
-            2
-          ],
-          "theme": [
-            "lightest",
-            "light"
-          ],
-          "species": [
-            "generic"
-          ]
-        }
-      ]
+      "label": "TypeHelper",
+      "mainPath": "index.html",
+      "minimumSize": { "width": 600, "height": 850 },
+      "preferredDockedSize": { "width": 600, "height": 700 }
     }
   ],
+
   "icons": [
     {
       "width": 32,
       "height": 32,
       "path": "images/icon@1x.png",
-      "scale": [
-        1,
-        2
-      ],
-      "theme": [
-        "dark",
-        "darkest"
-      ],
-      "species": [
-        "generic"
-      ]
+      "theme": ["dark", "darkest"]
     },
     {
       "width": 32,
       "height": 32,
       "path": "images/icon@2x.png",
-      "scale": [
-        1,
-        2
-      ],
-      "theme": [
-        "lightest",
-        "light"
-      ],
-      "species": [
-        "generic"
-      ]
+      "theme": ["light", "lightest"]
     }
-  ]
+  ],
+
+  "resources": {
+    "index.html": { "type": "html" },
+    "index.js": { "type": "javascript" },
+    "uxp/js/ui.js": { "type": "javascript" },
+    "uxp/js/api.js": { "type": "javascript" }
+  },
+
+  "requiredPermissions": {
+  "network": {
+    "domains": ["localhost:10854", "127.0.0.1:10854"]
+  },
+  "localFileSystem": "fullAccess",
+  "allowPlugins": true
+}
+
+
+
+
+
 }
