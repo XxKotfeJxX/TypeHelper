@@ -5,13 +5,14 @@
 // Лог для перевірки підключення скрипта
 console.log("📦 index.js завантажено");
 
+const resultEl = document.getElementById("result");
+
 document.addEventListener("DOMContentLoaded", () => {
   console.log("✅ DOM готовий, ініціалізація UI...");
   initUI();
 
   const healthBtn = document.getElementById("healthBtn");
   const analyzeBtn = document.getElementById("analyzeBtn");
-  const resultEl = document.getElementById("result");
 
   if (!healthBtn || !analyzeBtn || !resultEl) {
     console.error("❌ Не знайдено один або кілька елементів UI");
@@ -109,3 +110,65 @@ document.addEventListener("DOMContentLoaded", () => {
 
   console.log("🚀 Слухачі подій успішно ініціалізовано");
 });
+
+
+  // ----------------------------------------
+  // 🔹 Детекція тексту
+  // ----------------------------------------
+  const textBtn = document.getElementById("textBtn");
+
+  if (textBtn) {
+    textBtn.addEventListener("click", async () => {
+      console.log("💡 Клік по textBtn");
+
+      const { storage } = require("uxp");
+      const { localFileSystem } = storage;
+      const psApp = require("photoshop").app;
+
+      let filePath = null;
+
+      try {
+        // 1️⃣ Якщо відкрито документ у Photoshop
+        if (psApp?.activeDocument) {
+          try {
+            const doc = psApp.activeDocument;
+            if (doc.fullName) {
+              filePath =
+                doc.fullName.nativePath ||
+                doc.fullName.fsName ||
+                null;
+            }
+            if (filePath) {
+              console.log("📄 Активний документ:", filePath);
+            }
+          } catch (docErr) {
+            console.warn("⚠️ fullName недоступне:", docErr);
+          }
+        }
+
+        // 2️⃣ Якщо не збережений / немає документа — даємо вибрати файл
+        if (!filePath) {
+          console.log("📁 Активного документа нема — вибір файлу вручну...");
+          const file = await localFileSystem.getFileForOpening({
+            types: ["psd", "png", "jpg", "jpeg"]
+          });
+
+          if (!file) {
+            resultEl.textContent = "🚫 Файл не вибрано.";
+            return;
+          }
+
+          filePath = file.nativePath;
+          console.log("📄 Обраний файл:", filePath);
+        }
+
+        // 3️⃣ Виклик detectText() ← ГЛОБАЛЬНА ФУНКЦІЯ З API.JS
+        const result = await detectText(filePath);
+        resultEl.textContent = result;
+
+      } catch (err) {
+        console.error("❌ Помилка при детекції тексту:", err);
+        resultEl.textContent = "❌ Не вдалося виконати детекцію тексту.";
+      }
+    });
+  }
