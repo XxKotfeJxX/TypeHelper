@@ -2,55 +2,82 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from modules.psd_reader import analyze_psd
+from modules.text_detector import detect_text   # ← додаємо
+from modules.psd_bottom_preview import export_bottom_layer_png
+import cv2
+import numpy as np
 
-app = FastAPI(title="TypeHelper BubbleServer", version="0.0.2")
+app = FastAPI(title="TypeHelper BubbleServer", version="0.0.3")
 
-# ----------------------------------------
-# 🔹 CORS для UXP-панелі (дуже важливо!)
-# ----------------------------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "file://", 
-        "http://localhost",
-        "http://127.0.0.1",
-        "*"
-    ],
+    allow_origins=["*", "file://", "http://localhost", "http://127.0.0.1"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# --------------------------
-# 🔹 Модель запиту
-# --------------------------
 class PSDRequest(BaseModel):
     file_path: str
 
-# --------------------------
-# 🔹 Перевірка
-# --------------------------
+class ImageRequest(BaseModel):
+    file_path: str
+
 @app.get("/health")
 def health():
     return {"ok": True, "version": app.version, "status": "running"}
 
-# --------------------------
-# 🔹 Аналіз PSD
-# --------------------------
+
+# -------------------------------
+# 🔹 PSD ANALYZE
+# -------------------------------
 @app.post("/analyze-psd")
 def analyze(req: PSDRequest):
-    print("📨 analyze-psd called with:", req.file_path)
     try:
         data = analyze_psd(req.file_path)
-        print("✅ PSD analyzed successfully")
         return {"success": True, "data": data}
     except Exception as e:
-        print("❌ PSD analysis failed:", e)
         return {"success": False, "error": str(e)}
 
-# --------------------------
-# 🔹 Запуск сервера
-# --------------------------
+
+# -------------------------------
+# 🔹 DETECT TEXT (PNG/JPG/PSD PREVIEW)
+# -------------------------------
+@app.post("/detect-text")
+def detect_text_api(req: ImageRequest):
+    try:
+        path = req.file_path
+
+        # Якщо PSD — конвертуємо лише нижній шар
+        if path.lower().endswith(".psd"):
+            path = export_bottom_layer_png(path)
+
+        img = cv2.imread(path)
+        if img is None:
+            return {
+                "success": False,
+                "error": f"Cannot read image: {path}"
+            }
+
+        blocks = detect_text(img)
+
+        result = []
+        for b in blocks:
+            result.append({
+                "id": b.id,
+                "bbox": list(b.bbox),
+                "center": list(b.center),
+                "mser_count": b.mser_count,
+                "type": b.type,
+                "confidence": b.confidence,
+            })
+
+        return {"success": True, "text_blocks": result}
+
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+    
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=10854)
+    uvicorn.run("app:app", host="127.0.0.1", port=10854)
+
