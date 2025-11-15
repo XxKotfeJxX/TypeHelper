@@ -29,6 +29,8 @@ def analyze_psd(file_path: str) -> Dict[str, Any]:
                     "is_group": False,
                     "parent": parent,
                 })
+            if layer.is_group():
+                walk_layers(layer, parent=layer.name)
 
     walk_layers(psd)
 
