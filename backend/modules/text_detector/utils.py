@@ -45,6 +45,9 @@ def crop_mask_from_region(gray: np.ndarray, contour: np.ndarray, box: BBox) -> n
     x, y, w, h = box
     mask = np.zeros((h, w), dtype=np.uint8)
     contour_shifted = contour.copy()
+    if contour_shifted.ndim == 2:
+        # reshape Nx2 to Nx1x2 so cv2.drawContours accepts it
+        contour_shifted = contour_shifted[:, None, :]
     contour_shifted[:, 0, 0] -= x
     contour_shifted[:, 0, 1] -= y
     import cv2

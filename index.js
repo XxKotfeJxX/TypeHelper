@@ -2,6 +2,7 @@
 // 🧩 TypeHelper — index.js (оновлено)
 // ================================
 
+
 // Лог для перевірки підключення скрипта
 console.log("📦 index.js завантажено");
 
@@ -112,63 +113,79 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 
-  // ----------------------------------------
-  // 🔹 Детекція тексту
-  // ----------------------------------------
-  const textBtn = document.getElementById("textBtn");
+// ----------------------------------------
+// 🔹 Детекція тексту + DEBUG LAYERS
+// ----------------------------------------
+const textBtn = document.getElementById("textBtn");
 
-  if (textBtn) {
-    textBtn.addEventListener("click", async () => {
-      console.log("💡 Клік по textBtn");
+if (textBtn) {
+  textBtn.addEventListener("click", async () => {
+    console.log("💡 Клік по textBtn");
 
-      const { storage } = require("uxp");
-      const { localFileSystem } = storage;
-      const psApp = require("photoshop").app;
+    const { storage } = require("uxp");
+    const { localFileSystem } = storage;
+    const psApp = require("photoshop").app;
 
-      let filePath = null;
+    let filePath = null;
 
-      try {
-        // 1️⃣ Якщо відкрито документ у Photoshop
-        if (psApp?.activeDocument) {
-          try {
-            const doc = psApp.activeDocument;
-            if (doc.fullName) {
-              filePath =
-                doc.fullName.nativePath ||
-                doc.fullName.fsName ||
-                null;
-            }
-            if (filePath) {
-              console.log("📄 Активний документ:", filePath);
-            }
-          } catch (docErr) {
-            console.warn("⚠️ fullName недоступне:", docErr);
+    try {
+      // 1️⃣ Якщо відкрито документ у Photoshop
+      if (psApp?.activeDocument) {
+        try {
+          const doc = psApp.activeDocument;
+          if (doc.fullName) {
+            filePath =
+              doc.fullName.nativePath ||
+              doc.fullName.fsName ||
+              null;
           }
-        }
-
-        // 2️⃣ Якщо не збережений / немає документа — даємо вибрати файл
-        if (!filePath) {
-          console.log("📁 Активного документа нема — вибір файлу вручну...");
-          const file = await localFileSystem.getFileForOpening({
-            types: ["psd", "png", "jpg", "jpeg"]
-          });
-
-          if (!file) {
-            resultEl.textContent = "🚫 Файл не вибрано.";
-            return;
+          if (filePath) {
+            console.log("📄 Активний документ:", filePath);
           }
-
-          filePath = file.nativePath;
-          console.log("📄 Обраний файл:", filePath);
+        } catch (docErr) {
+          console.warn("⚠️ fullName недоступне:", docErr);
         }
-
-        // 3️⃣ Виклик detectText() ← ГЛОБАЛЬНА ФУНКЦІЯ З API.JS
-        const result = await detectText(filePath);
-        resultEl.textContent = result;
-
-      } catch (err) {
-        console.error("❌ Помилка при детекції тексту:", err);
-        resultEl.textContent = "❌ Не вдалося виконати детекцію тексту.";
       }
-    });
-  }
+
+      // 2️⃣ Якщо нема збереженого документа — обираємо вручну
+      if (!filePath) {
+        console.log("📁 Активного документа нема — вибір файлу вручну...");
+        const file = await localFileSystem.getFileForOpening({
+          types: ["psd", "png", "jpg", "jpeg"],
+        });
+
+        if (!file) {
+          resultEl.textContent = "🚫 Файл не вибрано.";
+          return;
+        }
+
+        filePath = file.nativePath;
+        console.log("📄 Обраний файл:", filePath);
+      }
+
+      // 3️⃣ Виклик RAW JSON API
+      const apiResult = await detectTextRaw(filePath);
+
+      if (!apiResult.success) {
+        console.error("❌ Backend error:", apiResult.error);
+        resultEl.textContent = "❌ " + apiResult.error;
+        return;
+      }
+
+      const blocks = apiResult.text_blocks || [];
+      console.log("🔎 Детектовано блоків:", blocks.length);
+
+      // 4️⃣ Створюємо debug-шари у Photoshop
+      await createDebugTextLayers(blocks);
+
+      // 5️⃣ Виводимо результат у панель для користувача
+      resultEl.textContent =
+        `✔️ Створено ${blocks.length} debug-шарів у Photoshop`;
+
+    } catch (err) {
+      console.error("❌ Помилка при детекції тексту:", err);
+      resultEl.textContent = "❌ Не вдалося виконати детекцію тексту.";
+    }
+  });
+}
+

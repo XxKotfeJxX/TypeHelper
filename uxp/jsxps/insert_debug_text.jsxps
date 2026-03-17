@@ -1,0 +1,28 @@
+#target photoshop
+
+function insertDebugText(text, posX, posY, groupName) {
+    var doc = app.activeDocument;
+
+    // шукаємо або створюємо групу
+    var group = null;
+    for (var i = 0; i < doc.layerSets.length; i++) {
+        if (doc.layerSets[i].name === groupName) {
+            group = doc.layerSets[i];
+            break;
+        }
+    }
+    if (!group) {
+        group = doc.layerSets.add();
+        group.name = groupName;
+    }
+
+    // створюємо текстовий шар
+    var layer = doc.artLayers.add();
+    layer.kind = LayerKind.TEXT;
+    layer.textItem.contents = text;
+    layer.textItem.position = [posX, posY];
+    layer.textItem.size = 20;
+
+    // переміщаємо в групу
+    layer.move(group, ElementPlacement.INSIDE);
+}
